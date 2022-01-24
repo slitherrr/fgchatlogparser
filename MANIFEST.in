@@ -1,0 +1,2 @@
+graft cleanup_logs/static
+global-exclude *.pyc
