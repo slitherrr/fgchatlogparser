@@ -2,7 +2,7 @@ import re
 
 LINE_CONTENTS_PARSER = re.compile(r'^(<font color="##?[0-9a-f]{6,8}">)(.*)(</font>)(?: \[(.*)\])?', re.IGNORECASE)
 LINK_PARSER = re.compile(r'^<a href="([^"]+)">\(LINK\)</a>$')
-LOG_TIMESTAMP = re.compile(r"<b>Chat log started at (\d{1,2})\.(\d{1,2})\.(\d{4}) / (\d\d):(\d\d):(\d\d)</b>")
+LOG_TIMESTAMP = re.compile(r'(?:<a name="\d{4}-\d{1,2}-\d{1,2}" /><b>Session started at (\d{4})-(\d{1,2})-(\d{1,2}) / (\d\d):(\d\d)|<b>Chat log started at (\d{1,2})\.(\d{1,2})\.(\d{4}) / (\d\d):(\d\d):(\d\d))</b>')
 HIDDEN_ROLL_GM = re.compile(r"^(absalom|GM):")
 
 IGNORE_THESE = [
@@ -77,7 +77,12 @@ def chunks_by_date(lines, encoding="utf8"):
             if current_timestamp:
                 yield (line_group, current_timestamp)
             line_group = []
-            month, day, year, hour, minute, second = timestamp_match.groups()
+            if timestamp_match.groups(1):
+                year, month, day, hour, minute, *_ = timestamp_match.groups()
+                second = 0
+            else:
+                _, _, _, _, _, month, day, year, hour, minute, second = timestamp_match.groups()
+
             current_timestamp = "%s%s%s_%s%s%s" % (year, month, day, hour, minute, second)
             continue
 

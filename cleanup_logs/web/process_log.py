@@ -1,17 +1,18 @@
 import io
 import zipfile
 
-from flask import abort, Blueprint, request, send_file
+from flask import abort, Blueprint, make_response, request, send_file
 from cleanup_logs.chunk_parser import chunks_by_date
+from cleanup_logs.calendar_export import each_event_from_string
 
 bp = Blueprint('process_log', __name__, url_prefix='/process_log')
 
-@bp.route('/', methods=['POST'])
-def index():
-    file = request.files["file"]
-    if not file:
+@bp.route('/chatlog', methods=['POST'])
+def chatlog():
+    if 'file' not in request.files:
         abort(404)
 
+    file = request.files['file']
     encoding = file.mimetype_params.get("charset", "utf8")
     zipfile_stream = io.BytesIO()
 
@@ -23,3 +24,42 @@ def index():
     zipfile_stream.seek(0)
 
     return send_file(zipfile_stream, mimetype="application/zip", attachment_filename="parsed_logs.zip", as_attachment=True)
+
+
+@bp.route('/calendar', methods=['POST'])
+def calendar():
+    if 'file' not in request.files:
+        abort(404)
+
+    file = request.files['file']
+    zipfile_stream = io.BytesIO()
+    encoding = file.mimetype_params.get("charset", "utf8")
+
+
+    with zipfile.ZipFile(zipfile_stream, 'w') as zf:
+        all_gm = []
+        all_public = []
+
+        for name, (year, month, day), gm, public in each_event_from_string(file.read()):
+            if gm:
+                all_gm.append('\n'.join([f'<div id={name} name={name}>', '<h3>', f'{year} - {month} - {day}', '</h3>', gm, '</div>']))
+
+            if public:
+                all_public.append('\n'.join([f'<div id={name} name={name}>', '<h3>', f'{year} - {month} - {day}', '</h3>', public, '</div>']))
+
+        if not any([all_gm, all_public]):
+            abort(make_response(f'No entries found in {file.name}', 404))
+
+        if all_gm:
+            print(repr(all_gm))
+            gm_as_html = ['<!doctype html>', '<html><body><content>', *all_gm ,'</content></body></html>']
+            zf.writestr('gm.html', '\n'.join(gm_as_html).encode(encoding))
+
+        if all_public:
+            print(repr(all_public))
+            public_as_html = ['<!doctype html>', '<html><body><content>', *all_public ,'</content></body></html>']
+            zf.writestr('public.html', '\n'.join(public_as_html).encode(encoding))
+
+    zipfile_stream.seek(0)
+
+    return send_file(zipfile_stream, mimetype="application/zip", attachment_filename="calendar_entries.zip", as_attachment=True)
