@@ -1,6 +1,6 @@
 import re
 
-LINE_CONTENTS_PARSER = re.compile(r'^(<font color="#[0-9a-f]{6,8}">)(.*)(</font>)(?: \[(.*)\])?')
+LINE_CONTENTS_PARSER = re.compile(r'^(<font color="##?[0-9a-f]{6,8}">)(.*)(</font>)(?: \[(.*)\])?', re.IGNORECASE)
 LINK_PARSER = re.compile(r'^<a href="([^"]+)">\(LINK\)</a>$')
 LOG_TIMESTAMP = re.compile(r"<b>Chat log started at (\d{1,2})\.(\d{1,2})\.(\d{4}) / (\d\d):(\d\d):(\d\d)</b>")
 HIDDEN_ROLL_GM = re.compile(r"^(absalom|GM):")
@@ -23,10 +23,42 @@ IGNORE_THESE = [
     ' /night',
     ' /day',
     'Campaign saved.',
+    'SLASH COMMANDS [required] &#60;optional&#62;',
+    '----------------',
+    '/afk ',
+    '/clear ',
+    '/console ',
+    '/dicevolume [0-100|on|off]',
+    '/die [NdN+N] &#60;message&#62;',
+    '/emote [message]',
+    '/export ',
+    '/exportchar ',
+    '/exportnpc ',
+    '/flushdb ',
+    '/gmid [name]',
+    '/id [name]',
+    '/importchar ',
+    '/importnpc ',
+    '/info ',
+    '/kick [user]',
+    '/mod [N] &#60;message&#62;',
+    '/mood [mood] &#60;message&#62;',
+    '/mood ([multiword mood]) &#60;message&#62;',
+    '/ooc [message]',
+    '/option [option_name] &#60;option_value&#62;',
+    '/r [message]',
+    '/reload ',
+    '/rollon [table name] &#60;-c [column name]&#62; &#60;-d dice&#62; &#60;-hide&#62;',
+    '/save ',
+    '/scaleui [50-200]',
+    '/story [message]',
+    '/version ',
+    '/vote [message]',
+    '/w [character] [message]',
 ]
 
 OOC_AND_WHISPERS = [re.compile(r) for r in [
-    r'\A-> [^:]+:',  # whispers
+    r'\A\s*-(>|&#62;) [^:]+:',  # whispers
     r'\A\w+ \([\s\w]+\):',  # OOC
 ]]
 
