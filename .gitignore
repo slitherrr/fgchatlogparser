@@ -4,3 +4,4 @@ chatlog_out/
 __pycache__
 *.pyc
 *.egg-info
+pyrightconfig.json
