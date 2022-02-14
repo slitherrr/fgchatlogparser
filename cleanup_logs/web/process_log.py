@@ -13,11 +13,12 @@ def chatlog():
         abort(404)
 
     file = request.files['file']
+    display_crunch = request.values.get('display-crunch') == 'on'
     encoding = file.mimetype_params.get("charset", "utf8")
     zipfile_stream = io.BytesIO()
 
     with zipfile.ZipFile(zipfile_stream, 'w') as zf:
-        for chunk, datestamp in chunks_by_date(file, encoding):
+        for chunk, datestamp in chunks_by_date(file, encoding, display_crunch=display_crunch):
             chunk_as_html = ['<!doctype html>', '<html><body><content>'] + [l + '<br>' for l in chunk] + ['</content></body></html>']
             zf.writestr('{}.html'.format(datestamp), '\n'.join(chunk_as_html).encode('utf8'))
 

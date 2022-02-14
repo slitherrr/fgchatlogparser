@@ -63,7 +63,7 @@ OOC_AND_WHISPERS = [re.compile(r) for r in [
 ]]
 
 
-def chunks_by_date(lines, encoding="utf8"):
+def chunks_by_date(lines, encoding="utf8", display_crunch=False):
     line_group = None
     current_timestamp = None
     for l in lines:
@@ -108,7 +108,11 @@ def chunks_by_date(lines, encoding="utf8"):
             if line_group is None:
                 current_timestamp = "unknown_time"
                 line_group = []
-            line_group.append("%s%s%s" % (font_start, contents, font_end))
+
+            if display_crunch and crunch:
+                line_group.append("%s%s: %s%s" % (font_start, contents, crunch, font_end))
+            else:
+                line_group.append("%s%s%s" % (font_start, contents, font_end))
 
     if line_group:
         yield (line_group, current_timestamp)
