@@ -1,7 +1,8 @@
-from defusedxml.ElementTree import fromstring, tostring
+from lxml.etree import fromstring, tostring, HTMLParser
 
 def each_event_from_string(source):
-    root = fromstring(source)
+    parser = HTMLParser()
+    root = fromstring(source, parser)
     logs = root.find('.//calendar/log')
     if not logs:
         return 'OK'
