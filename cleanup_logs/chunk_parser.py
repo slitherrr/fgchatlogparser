@@ -77,7 +77,7 @@ def chunks_by_date(lines, encoding="utf8", display_crunch=False):
             if current_timestamp:
                 yield (line_group, current_timestamp)
             line_group = []
-            if timestamp_match.groups(1):
+            if timestamp_match.groups()[1]:
                 year, month, day, hour, minute, *_ = timestamp_match.groups()
                 second = 0
             else:
