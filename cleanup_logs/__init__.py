@@ -1,5 +1,3 @@
-import os
-
 from flask import Flask
 
 
@@ -14,11 +12,12 @@ def create_app(test_config=None):
     else:
         app.config.from_mapping(test_config)
 
-    from .web import process_log
+    from .web import process_log, fg2wiki
 
     @app.route('/')
     def root():
         return app.send_static_file('index.html')
     app.register_blueprint(process_log.bp)
+    app.register_blueprint(fg2wiki.bp)
 
     return app

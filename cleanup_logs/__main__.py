@@ -1,18 +1,17 @@
-import re
-from chunk_parser import chunks_by_date
+from cleanup_logs.chunk_parser import chunks_by_date
 
 
 def main(chatlog, output_directory):
-    if os.path.exists(args.output_directory):
+    if os.path.exists(output_directory):
         sys.stderr.write("We can't put the output into a directory that already exists, delete it first", )
         sys.exit(1)
 
-    os.mkdir(args.output_directory)
+    os.mkdir(output_directory)
 
-    for to_write, timestamp in chunks_by_date(args.chatlog):
+    for to_write, timestamp in chunks_by_date(chatlog):
         if to_write:
             logging.info("Writing file with timestamp %s" % timestamp)
-            with open(os.path.join(args.output_directory, "%s.html" % timestamp), 'wb') as f:
+            with open(os.path.join(output_directory, "%s.html" % timestamp), 'wb') as f:
                 f.write(b"<!doctype html>\n<html><body><content>\n")
                 for w in to_write:
                     f.write(w.encode("utf8"))

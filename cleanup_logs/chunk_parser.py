@@ -64,7 +64,7 @@ OOC_AND_WHISPERS = [re.compile(r) for r in [
 
 
 def chunks_by_date(lines, encoding="utf8", display_crunch=False):
-    line_group = None
+    line_group = []
     current_timestamp = None
     for l in lines:
         l = l.decode(encoding)

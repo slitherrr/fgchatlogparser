@@ -5,7 +5,9 @@ from flask import abort, Blueprint, make_response, request, send_file
 from cleanup_logs.chunk_parser import chunks_by_date
 from cleanup_logs.calendar_export import each_event_from_string
 
+
 bp = Blueprint('process_log', __name__, url_prefix='/process_log')
+
 
 @bp.route('/chatlog', methods=['POST'])
 def chatlog():
@@ -24,7 +26,7 @@ def chatlog():
 
     zipfile_stream.seek(0)
 
-    return send_file(zipfile_stream, mimetype="application/zip", attachment_filename="parsed_logs.zip", as_attachment=True)
+    return send_file(zipfile_stream, mimetype="application/zip", download_name="parsed_logs.zip", as_attachment=True)
 
 
 @bp.route('/calendar', methods=['POST'])
@@ -63,4 +65,4 @@ def calendar():
 
     zipfile_stream.seek(0)
 
-    return send_file(zipfile_stream, mimetype="application/zip", attachment_filename="calendar_entries.zip", as_attachment=True)
+    return send_file(zipfile_stream, mimetype="application/zip", download_name="calendar_entries.zip", as_attachment=True)
