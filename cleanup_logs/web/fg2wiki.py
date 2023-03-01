@@ -1,4 +1,5 @@
 import io
+import zipfile
 
 from pathlib import Path
 from flask import abort, Blueprint, make_response, request, send_file
@@ -15,23 +16,45 @@ def towiki():
 
     file = request.files['file']
     if file.filename:
-        attachment_filename = Path(file.filename).with_suffix('.wiki')
+        req_filename = Path(file.filename)
     else:
-        attachment_filename = 'character.wiki'
+        req_filename = Path('character.xml')
 
     return_as_file = request.values.get('download') == 'on'
     encoding = file.mimetype_params.get('charset', None)
-    result = parse_to_wiki_from_io(file, from_encoding=encoding)
+    result = parse_to_wiki_from_io(file.stream, from_encoding=encoding)
+
+    if not result:
+        resp = make_response("No character detected", 200)
+        resp.headers['content-type'] = 'text/plain'
+        return resp
 
     if return_as_file:
-        return_stream = io.BytesIO(result.encode("utf-8"))
+        if len(result) == 1:
+            name, sheet = result[0]
+            return_stream = io.BytesIO(sheet.encode("utf-8"))
+            attachment_filename = f'{name}.wiki'
+            mimetype = "text/plain"
+        else:
+            return_stream = io.BytesIO()
+
+            with zipfile.ZipFile(return_stream, 'w') as zf:
+                for name, sheet in result:
+                    zf.writestr(f'{name}.wiki', sheet.encode('utf-8'))
+
+            return_stream.seek(0)
+
+            attachment_filename = req_filename.with_suffix('.zip')
+            mimetype = "application/zip"
+
         return send_file(
             return_stream,
-            mimetype="application/zip",
+            mimetype=mimetype,
             download_name=str(attachment_filename),
             as_attachment=return_as_file,
         )
     else:
-        resp = make_response(result, 200)
+        resptext = '\n---\n'.join(sheet for (_, sheet) in result)
+        resp = make_response(resptext, 200)
         resp.headers['content-type'] = 'text/plain'
         return resp

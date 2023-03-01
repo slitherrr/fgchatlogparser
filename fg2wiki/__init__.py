@@ -1,28 +1,34 @@
 import os
 
-from collections import defaultdict
 from itertools import groupby
-from bs4 import BeautifulSoup
+from typing import IO, Any, Dict, Iterable, List, Tuple, TypeVar, Union, cast
+from bs4 import BeautifulSoup, NavigableString
 from bs4.element import Tag
 from jinja2 import FileSystemLoader, Environment
 
 
-def ident(x):
+T = TypeVar('T')
+
+
+def ident(x: T) -> T:
     return x
 
 
-def strc(tag):
-    return ' '.join(tag.contents)
+def strc(tag: Tag) -> str:
+    return ' '.join(str(x) for x in tag.contents)
 
 
-def intc(tag):
-    num = int(tag.contents[0])
+def intc(tag: Tag) -> int:
+    cast_contents = cast(List[str], tag.contents)
+    num = int(cast_contents[0])
     return num
 
-def formattedtextc(tag):
+
+def formattedtextc(tag: Tag) -> str:
     return ''.join(str(x) for x in tag.children)
 
-def formatclasslevels(classes):
+
+def formatclasslevels(classes: List[Tag]) -> str:
     level_items = [
         (
             xmlc(child_by_tag(ccls, 'name')),
@@ -35,22 +41,26 @@ def formatclasslevels(classes):
         return ' / '.join(f'{cname} {num}' for (cname, num) in level_items)
 
 
-def only_prefix_children(tag, prefix):
+def only_prefix_children(tag: Tag, prefix) -> Iterable[Tag]:
      for child in only_tag_children(tag):
         if child.name.startswith(prefix):
             yield child
 
 
-def only_tag_children(tag):
+def only_tag_children(tag: Tag) -> Iterable[Tag]:
     for child in tag.children:
         if isinstance(child, Tag):
             yield child
 
-def child_by_tag(tag, childname, recursive=False):
+
+def child_by_tag(tag: Tag, childname: str, recursive: bool=False) -> Union[Tag, NavigableString, None]:
     return tag.find(childname, recursive=recursive)
 
 
-def xmlc(tag, format_with=None):
+def xmlc(tag: Union[Tag, NavigableString, None], format_with: Union[str, None] = None) -> Union[str, int]:
+    if tag is None or isinstance(tag, NavigableString):
+        return ''
+
     formatter_func = format_with.format if format_with else ident
 
     if tag.attrs['type'] == 'number':
@@ -65,22 +75,23 @@ def xmlc(tag, format_with=None):
     return formatter_func(result)
 
 
-def grouptagsby(iterable_of_tags, attrname):
-    def keyfunc(el):
+def grouptagsby(iterable_of_tags: Iterable[Tag], attrname: str) -> Iterable[Tuple[Union[str, int], Iterable[Tag]]]:
+    def keyfunc(el: Tag) -> Union[str, int]:
         return xmlc(child_by_tag(el, attrname))
 
     return groupby(sorted(iterable_of_tags, key=keyfunc), key=keyfunc)
 
 
-def pluraltext(n, singular, plural):
+def pluraltext(n: int, singular: str, plural: str) -> str:
     if n == 1:
         return singular
     else:
         return plural
 
 
-def makepowergroupindex(powergroups, spellsonly=False):
+def makepowergroupindex(powergroups: Tag, spellsonly: bool=False) -> Dict[str, Tag]:
     powergroupindex = {}
+
     for group in only_tag_children(powergroups):
         if spellsonly and group.castertype is None:
             continue
@@ -89,23 +100,12 @@ def makepowergroupindex(powergroups, spellsonly=False):
 
     return powergroupindex
 
-def grouppowersbyname(powers, powergroups, spellsonly=False):
-    grouped = defaultdict(list)
 
-    powergroupindex = makepowergroupindex(powergroups, spellsonly=spellsonly)
-    for power in only_tag_children(powers):
-        gname = xmlc(power.group)
-        if gname in powergroupindex:
-            grouped[gname].append(power)
-
-    return grouped
-
-
-def nw(elem):
+def nw(elem: Any) -> str:
     return f"<nowiki>{elem}</nowiki>"
 
 
-def parse_to_wiki(sheet):
+def parse_to_wiki(sheet: BeautifulSoup) -> List[Tuple[str, str]]:
     loader = FileSystemLoader(os.path.dirname(os.path.realpath(__file__)))
     env = Environment(autoescape=False, loader=loader, extensions=['jinja2.ext.i18n'])
     env.filters['xmlc'] = xmlc
@@ -119,10 +119,28 @@ def parse_to_wiki(sheet):
     env.filters['nw'] = nw
 
     tpl = env.get_template('wiki.tpl')
-    return tpl.render(sheet=sheet, powergroupindex=makepowergroupindex(sheet.character.powergroup))
+    pgi = {}
+    rv = []
+
+    if not sheet.root or not sheet.root.character:
+        return rv
+
+    for i, character in enumerate(sheet.root.find_all('character', recursive=False)):
+        name_tag = child_by_tag(character, 'name')
+        name = (
+            strc(name_tag) if name_tag and not isinstance(name_tag, NavigableString)
+            else f'character{i}'
+        )
+
+        if character.powergroup:
+            pgi = makepowergroupindex(character.powergroup)
+
+        rv.append((name.replace(' ', ''), tpl.render(charname=name, character=character, powergroupindex=pgi)))
+
+    return rv
 
 
-def parse_to_wiki_from_io(sheet_io, from_encoding=None):
+def parse_to_wiki_from_io(sheet_io: IO[bytes], from_encoding: Union[str, None]=None) -> List[Tuple[str, str]]:
     return parse_to_wiki(BeautifulSoup(sheet_io, "xml", from_encoding=from_encoding))
 
 

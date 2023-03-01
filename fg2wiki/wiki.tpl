@@ -11,52 +11,52 @@
 {% set outputstate.spells = true -%}
 {%- endif -%}
 {%- endmacro -%}
-[[File:{{ sheet.character.find('name', recursive=false) | xmlc | replace(' ', '') }}.png |150px]]
-{%- set classes = sheet.character.classes|only_tag_children|list-%}
-[[{{ sheet.character.find('name', recursive=false) | xmlc }}]] - {{ sheet.character.race | xmlc }} Level {{ classes | map(attribute="level") | map("xmlc")|sum}} ({{ classes | formatclasslevels}})
-
-* Background: {{sheet.character.background | xmlc}}
-
-{% if sheet.character.personalitytraits is not none -%}
-{%- set traitsfull = sheet.character.personalitytraits | xmlc -%}
+[[File:{{ charname | replace(' ', '') }}.png |150px]]
+{%- set classes = character.classes|only_tag_children|list-%}
+[[{{ charname }}]] - {{ character.race | xmlc }} Level {{ classes | map(attribute="level") | map("xmlc")|sum}} ({{ classes | formatclasslevels}})
+{% if character.background -%}
+* Background: {{character.background | xmlc}}
+{%- endif -%}
+{% if character.personalitytraits is not none -%}
+{%- set traitsfull = character.personalitytraits | xmlc -%}
 ===Traits===
 {% for trait in traitsfull.split('\\n') -%}
 * {{ trait | nw }}
 {% endfor %}
-{%- endif %}
-{% if sheet.character.ideals is not none -%}
-{%- set idealsfull = sheet.character.ideals | xmlc -%}
+{% endif -%}
+{% if character.ideals is not none -%}
+{%- set idealsfull = character.ideals | xmlc -%}
 ===Ideals===
 {% for ideal in idealsfull.split('\\n') -%}
 * {{ ideal | nw}}
 {% endfor %}
-{%- endif %}
-{% if sheet.character.bonds is not none -%}
-{%- set bondsfull = sheet.character.bonds | xmlc -%}
+{% endif -%}
+{% if character.bonds is not none -%}
+{%- set bondsfull = character.bonds | xmlc -%}
 ===Bonds===
 {% for bond in bondsfull.split('\\n') -%}
 * {{ bond | nw}}
 {% endfor %}
-{%- endif %}
-{% if sheet.character.flaws is not none -%}
-{%- set flawsfull = sheet.character.flaws | xmlc -%}
+{% endif -%}
+{% if character.flaws is not none -%}
+{%- set flawsfull = character.flaws | xmlc -%}
 ===Flaws===
 {% for flaw in flawsfull.split('\\n') -%}
 * {{ flaw | nw}}
 {% endfor %}
-{%- endif %}
-{%  if sheet.character.appearance is not none -%}
+{% endif -%}
+{%  if character.appearance is not none -%}
 ===Appearance===
-{% set appearance = sheet.character.appearance | xmlc -%}
+{% set appearance = character.appearance | xmlc -%}
 {{ appearance.replace('\\n', '\n') | nw}}
-{%- endif %}
+{% endif -%}
 ==Attributes==
 {{  '{{col-begin}}' }}
 {{  '{{col-break}}' }}
 {|class="wikitable"
 !Attribute !! Value !! Bonus !! Save
 {% for aname in ['strength', 'dexterity', 'constitution', 'intelligence', 'wisdom', 'charisma'] -%}
-    {% set curabil = sheet.character.abilities.find(aname, recursive=false) -%}
+    {% set curabil = character.abilities.find(aname, recursive=false) -%}
 |-
 | {{ aname | title }} || {{ curabil.score | xmlc }} || {{ curabil.bonus | xmlc(format_with="{:+}") }} || {{ curabil.save | xmlc(format_with="{:+}") }}
 {%- endfor %}
@@ -65,17 +65,17 @@
 
 ===Secondary Attributes===
 {|
-|Hit Points || ''' {{ sheet.character.hp.total | xmlc }}'''
+|Hit Points || ''' {{ character.hp.total | xmlc }}'''
 |-
-|Armor Class || {{ sheet.character.defenses.ac.total | xmlc }}
+|Armor Class || {{ character.defenses.ac.total | xmlc }}
 |-
-|Proficiency Bonus || {{ sheet.character.profbonus | xmlc(format_with="{:+}") }}
+|Proficiency Bonus || {{ character.profbonus | xmlc(format_with="{:+}") }}
 |-
-|Passive Perception || {{ sheet.character.perception | xmlc }}
+|Passive Perception || {{ character.perception | xmlc }}
 |-
-|Initiative || {{ sheet.character.initiative.total | xmlc(format_with="{:+}") }}
+|Initiative || {{ character.initiative.total | xmlc(format_with="{:+}") }}
 |-
-|Base Speed || {{ sheet.character.speed.total | xmlc }} Feet
+|Base Speed || {{ character.speed.total | xmlc }} Feet
 |}
 {{ '{{col-end}}' }}
 
@@ -85,7 +85,7 @@
 {{ '{{col-break}}' }}
 {|class="sortable mw-collapsible wikitable"
 !|Skill||Ability||Score
-{% for skill in sheet.character.skilllist | only_tag_children -%}
+{% for skill in character.skilllist | only_tag_children -%}
 {% set prof = skill.prof | xmlc %}
 |-
 |{% if prof == 1 -%}''{%- endif %}{{ skill.find('name', recursive=false) | xmlc }}{% if prof == 1 -%}''{%- endif %} || {%  if skill.stat %}{{ skill.stat | xmlc | title }}{%  else %}(no stat){% endif %} || {{ skill.total | xmlc(format_with="{:+}") }}
@@ -96,20 +96,23 @@
 
 ==Languages==
 
-{% for language in sheet.character.languagelist | only_tag_children -%}
+{% if character.languagelist -%}
+{% for language in character.languagelist | only_tag_children -%}
 * {{ language.find('name', recursive=False) | xmlc }}
 {% endfor -%}
-{% if sheet.character.featurelist is not none%}
+{%- endif -%}
+{% if character.featurelist is not none%}
 ==Features==
 
-{% for feature in sheet.character.featurelist | only_tag_children -%}
+{% for feature in character.featurelist | only_tag_children -%}
 *{{ feature | child_by_tag('name') | xmlc | nw}}
 {# feature | child_by_tag('text') | xmlc | trim #}
 {%- endfor -%}
-{%- endif %}
+{% endif -%}
 {{ '{{col-end}}' }}
 
-{%- set pactslots = sheet.character.powermeta | only_prefix_children('pactmagicslots') | map('child_by_tag', 'max') | map('xmlc') | list-%}
+{% if character.powermeta -%}
+{%- set pactslots = character.powermeta | only_prefix_children('pactmagicslots') | map('child_by_tag', 'max') | map('xmlc') | list-%}
 {%- if (pactslots | max) > 0 -%}
 {{ spellcasting_if_not_yet() }}
 ===Pact Magic Slots===
@@ -118,8 +121,8 @@
     * Level {{ loop.index }}: {{ slotmax }} {{ slotmax | pluraltext('slot', 'slots')}}
 {% endif %}
 {%- endfor -%}
-{%- endif %}
-{%- set spellslots = sheet.character.powermeta | only_prefix_children('spellslots') | map('child_by_tag', 'max') | map('xmlc') | list -%}
+{% endif -%}
+{%- set spellslots = character.powermeta | only_prefix_children('spellslots') | map('child_by_tag', 'max') | map('xmlc') | list -%}
 {%- if (spellslots | max) > 0 -%}
 {{ spellcasting_if_not_yet() }}
 ===Other Slots===
@@ -128,10 +131,10 @@
     * Level {{ loop.index }}: {{ slotmax }} {{ slotmax | pluraltext('slot', 'slots')}}
 {% endif %}
 {%- endfor -%}
-{%- endif %}
-{%- if sheet.character.powergroup is not none %}
-{%- set spellpowersindex = sheet.character.powergroup | makepowergroupindex(spellsonly=true) -%}
-{% for group, powers in sheet.character.powers | only_tag_children | grouptagsby("group") -%}
+{% endif -%}
+{%- if character.powergroup is not none %}
+{%- set spellpowersindex = character.powergroup | makepowergroupindex(spellsonly=true) -%}
+{% for group, powers in character.powers | only_tag_children | grouptagsby("group") -%}
 {% if group in spellpowersindex -%}
 {{ spells_if_not_yet() }}
 ===={{ group }}====
@@ -141,10 +144,12 @@
 {% endfor -%}
 {% endif -%}
 {% endfor -%}
-{%- endif %}
+{%- endif -%}
+{%- endif -%}
 
+{% if character.inventorylist -%}
 ==Gear==
 
-{{ sheet.character.inventorylist | only_tag_children | map('child_by_tag', 'name') | map('xmlc') | join(', ') }}
-
+{{ character.inventorylist | only_tag_children | map('child_by_tag', 'name') | map('xmlc') | join(', ') }}
+{%-endif %}
 [[Category:PC Character Sheets]]

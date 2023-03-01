@@ -7,5 +7,5 @@ if __name__ == '__main__':
         print("gimme a filename plz")
         sys.exit(1)
 
-    with open(sys.argv[1]) as fr:
-        sys.stdout.write(parse_to_wiki_from_io(fr))
+    with open(sys.argv[1], 'rb') as fr:
+        sys.stdout.write('\n---\n'.join(sheet for (_, sheet) in parse_to_wiki_from_io(fr)))
