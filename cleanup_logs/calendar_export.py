@@ -1,5 +1,6 @@
 from lxml.etree import fromstring, tostring, HTMLParser
 
+
 def each_event_from_string(source):
     parser = HTMLParser()
     root = fromstring(source, parser)
