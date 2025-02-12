@@ -59,7 +59,7 @@ IGNORE_THESE = [
     "/version ",
     "/vote [message]",
     "/w [character] [message]",
-    "3.5E v2.9 ruleset for Fantasy Grounds II.&#13;Copyright 2>",
+    "3.5E v2.9 ruleset for Fantasy Grounds II.&#13;Copyright 2012 Smiteworks USA, LLC.</font>",
 ]
 
 OOC_AND_WHISPERS = [
@@ -113,7 +113,8 @@ def chunks_by_date(lines, encoding="utf8", display_crunch=False):
                 (contents,) = link_match.groups()
                 contents = '<a href="{url}">{url}</a>'.format(url=contents)
             else:
-                raise RuntimeError("Got unexpected line: %s" % l)
+                print("Skipping %s" % (l,))
+                continue
 
         if crunch and HIDDEN_ROLL_GM.match(contents):
             line_group.append("[hiding roll result for %s]" % contents)
